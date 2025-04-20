@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+{% load static %}
+
+{% block title %}Session Attendance - QR Attendance System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'attendance_list' %}">Attendance</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Session Details</li>
+            </ol>
+        </nav>
+        
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>Session Attendance</h2>
+            <div>
+                <a href="{% url 'export_attendance' %}?format=csv&session={{ session.id }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export CSV
+                </a>
+                <a href="{% url 'export_attendance' %}?format=pdf&session={{ session.id }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-file-earmark-pdf me-1"></i> Export PDF
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Session Information</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Course:</strong> {{ session.course.code }} - {{ session.course.title }}</p>
+                <p><strong>Date:</strong> {{ session.date }}</p>
+                <p><strong>Time:</strong> {{ session.start_time }} - {{ session.end_time }}</p>
+                <p><strong>Location:</strong> {{ session.location.name }}</p>
+                <p><strong>Status:</strong> 
+                    {% if session.is_active %}
+                        <span class="badge bg-success">Active</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Inactive</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        
+        <div class="card shadow mt-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Attendance Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h3>{{ attendances.count }}</h3>
+                        <p class="text-muted">Students Present</p>
+                    </div>
+                    <div class="col-6">
+                        <h3>{{ attendance_rate|default:"0" }}%</h3>
+                        <p class="text-muted">Attendance Rate</p>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <h6 class="mb-3">Verification Methods</h6>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>QR Code</span>
+                        <span>{{ qr_count|default:"0" }}</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ qr_percentage|default:"0" }}%;" 
+                             aria-valuenow="{{ qr_percentage|default:'0' }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Geolocation</span>
+                        <span>{{ geo_count|default:"0" }}</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ geo_percentage|default:"0" }}%;" 
+                             aria-valuenow="{{ geo_percentage|default:'0' }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Manual</span>
+                        <span>{{ manual_count|default:"0" }}</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-secondary" role="progressbar" style="width: {{ manual_percentage|default:"0" }}%;" 
+                             aria-valuenow="{{ manual_percentage|default:'0' }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Attendance Records</h5>
+            </div>
+            <div class="card-body">
+                {% if attendances %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Matric Number</th>
+                                    <th>Time</th>
+                                    <th>Verification</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attendance in attendances %}
+                                <tr>
+                                    <td>{{ attendance.student.get_full_name }}</td>
+                                    <td>{{ attendance.student.matric_number }}</td>
+                                    <td>{{ attendance.timestamp|time }}</td>
+                                    <td>
+                                        {% if attendance.verification_method == 'qrcode' %}
+                                            <span class="badge bg-primary">QR Code</span>
+                                        {% elif attendance.verification_method == 'geolocation' %}
+                                            <span class="badge bg-info">Geolocation</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Manual</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {% if is_paginated %}
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?session={{ session.id }}&page=1" aria-label="First">
+                                        <span aria-hidden="true">&laquo;&laquo;</span>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?session={{ session.id }}&page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?session={{ session.id }}&page={{ num }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?session={{ session.id }}&page={{ page_obj.next_page_number }}" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?session={{ session.id }}&page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                                        <span aria-hidden="true">&raquo;&raquo;</span>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    
+                {% else %}
+                    <p class="text-center text-muted">No attendance records found for this session.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

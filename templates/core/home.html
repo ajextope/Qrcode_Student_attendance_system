@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+{% load static %}
+
+{% block title %}Home - QR Attendance System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-section {
+        background: linear-gradient(rgba(0, 123, 255, 0.7), rgba(0, 123, 255, 0.9)), url('{% static "img/campus.jpg" %}');
+        background-size: cover;
+        background-position: center;
+        color: white;
+        padding: 5rem 0;
+        margin-bottom: 2rem;
+    }
+    
+    .feature-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        color: #0d6efd;
+    }
+    
+    .feature-card {
+        transition: transform 0.3s ease;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="container text-center">
+        <h1 class="display-4 fw-bold">QR Attendance Management System</h1>
+        <p class="lead">A modern solution for tracking student attendance at Afe Babalola University</p>
+        {% if not user.is_authenticated %}
+            <div class="mt-4">
+                <a href="{% url 'login' %}" class="btn btn-light btn-lg me-2">Login</a>
+                <a href="{% url 'register' %}" class="btn btn-outline-light btn-lg">Register</a>
+            </div>
+        {% else %}
+            <div class="mt-4">
+                <a href="{% url 'dashboard' %}" class="btn btn-light btn-lg">Go to Dashboard</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="container mb-5">
+    <div class="text-center mb-5">
+        <h2>Key Features</h2>
+        <p class="lead text-muted">Our system offers a comprehensive solution for attendance management</p>
+    </div>
+    
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm feature-card">
+                <div class="card-body text-center">
+                    <div class="feature-icon">
+                        <i class="bi bi-qr-code"></i>
+                    </div>
+                    <h5 class="card-title">QR Code Generation</h5>
+                    <p class="card-text">Generate unique QR codes for each class session with customizable expiration times.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm feature-card">
+                <div class="card-body text-center">
+                    <div class="feature-icon">
+                        <i class="bi bi-geo-alt"></i>
+                    </div>
+                    <h5 class="card-title">Geolocation Verification</h5>
+                    <p class="card-text">Ensure students are physically present in class with location-based verification.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm feature-card">
+                <div class="card-body text-center">
+                    <div class="feature-icon">
+                        <i class="bi bi-graph-up"></i>
+                    </div>
+                    <h5 class="card-title">Attendance Analytics</h5>
+                    <p class="card-text">Generate detailed reports and visualize attendance patterns with interactive charts.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- How It Works Section -->
+<div class="bg-light py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2>How It Works</h2>
+            <p class="lead text-muted">Simple and efficient attendance tracking in three easy steps</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card border-0 bg-transparent">
+                    <div class="card-body text-center">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+                            <h3 class="mb-0">1</h3>
+                        </div>
+                        <h5>Lecturer Generates QR Code</h5>
+                        <p class="text-muted">Lecturers create a unique QR code for each class session with a specified expiration time.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card border-0 bg-transparent">
+                    <div class="card-body text-center">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+                            <h3 class="mb-0">2</h3>
+                        </div>
+                        <h5>Students Scan QR Code</h5>
+                        <p class="text-muted">Students scan the QR code using their mobile devices while physically present in class.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card border-0 bg-transparent">
+                    <div class="card-body text-center">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+                            <h3 class="mb-0">3</h3>
+                        </div>
+                        <h5>Attendance is Recorded</h5>
+                        <p class="text-muted">The system verifies location and automatically records attendance in the database.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- About Section -->
+<div class="container py-5">
+    <div class="row align-items-center">
+        <div class="col-lg-6 mb-4 mb-lg-0">
+            <h2>About Afe Babalola University</h2>
+            <p class="lead">A world-class institution committed to excellence in education</p>
+            <p>Afe Babalola University, Ado-Ekiti (ABUAD) is a private university located in Ado-Ekiti, Ekiti State, Nigeria. The university was founded by Aare Afe Babalola, a renowned lawyer and philanthropist.</p>
+            <p>This QR-code attendance management system is designed specifically for ABUAD to streamline the attendance tracking process and ensure accurate records for all courses.</p>
+        </div>
+        <div class="col-lg-6">
+            <div class="card shadow">
+                <div class="card-body p-0">
+                    <img src="{% static 'img/university.jpg' %}" alt="Afe Babalola University" class="img-fluid rounded">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

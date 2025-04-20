@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}Student Dashboard - QR Attendance System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <h2>Student Dashboard</h2>
+        <p class="lead">Welcome, {{ user.get_full_name }}</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-book-fill me-2"></i>My Courses</h5>
+                <p class="card-text">View your enrolled courses and class schedules.</p>
+                <a href="{% url 'enrolled_courses' %}" class="btn btn-primary">View Courses</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-qr-code-scan me-2"></i>Scan QR Code</h5>
+                <p class="card-text">Scan QR code to mark your attendance.</p>
+                <a href="{% url 'scan_qrcode' %}" class="btn btn-primary">Scan QR</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-clipboard-check-fill me-2"></i>My Attendance</h5>
+                <p class="card-text">View your attendance records for all courses.</p>
+                <a href="{% url 'attendance_list' %}" class="btn btn-primary">View Attendance</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Upcoming Sessions</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-center text-muted">No upcoming sessions</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Attendance Summary</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-center text-muted">No attendance records found</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

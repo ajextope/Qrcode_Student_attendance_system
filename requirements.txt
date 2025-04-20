@@ -1,0 +1,7 @@
+Django==5.2
+django-bootstrap5==25.1
+qrcode==8.1
+pillow==11.2.1
+geopy==2.4.1
+matplotlib==3.8.2
+reportlab==4.0.9

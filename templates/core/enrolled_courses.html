@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}Enrolled Courses and Class Schedules - QR Attendance System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <h2>My Enrolled Courses</h2>
+        <p class="lead">Courses you are currently enrolled in:</p>
+    </div>
+</div>
+
+<div class="row">
+    {% if courses %}
+        <div class="col-md-12 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Course List</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Course Name</th>
+                                <th>Course Code</th>
+                                <th>Schedule</th> <!-- Added Schedule Column -->
+                                <th>Instructor</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for course in courses %}
+                            <tr>
+                                <td>{{ course.title }}</td> <!-- Course title -->
+                                <td>{{ course.code }}</td> <!-- Course code -->
+                                <td>
+                                    {% for session in course.sessions.all %}
+                                        <div>
+                                            {{ session.date }}: {{ session.start_time }} - {{ session.end_time }} 
+                                            ({{ session.location.name }}, {{ session.location.building }} {{ session.location.room_number }})
+                                        </div>
+                                    {% empty %}
+                                        No scheduled classes.
+                                    {% endfor %}
+                                </td> <!-- Class schedule -->
+                                <td>{{ course.lecturer.get_full_name }}</td> <!-- Lecturer's username -->
+                                <td>
+                                    {% if course.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="col-md-12 mb-4">
+            <p class="text-center text-muted">You are not enrolled in any courses.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

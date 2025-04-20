@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}Courses - QR Attendance System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Courses</li>
+            </ol>
+        </nav>
+        
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>My Courses</h2>
+            {% if user.user_type == 'admin' or user.user_type == 'lecturer' %}
+            <div>
+                <a href="{% url 'session_management' %}" class="btn btn-primary">
+                    <i class="bi bi-calendar-plus me-1"></i> Manage Sessions
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    {% if courses %}
+        {% for course in courses %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{{ course.code }}</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="card-title">{{ course.title }}</h6>
+                    <p class="card-text">{{ course.description|truncatewords:20 }}</p>
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <small class="text-muted">
+                            {% if user.user_type == 'student' %}
+                                <i class="bi bi-person-fill me-1"></i> {{ course.lecturer.get_full_name }}
+                            {% else %}
+                                <i class="bi bi-people-fill me-1"></i> {{ course.students.count }} Students
+                            {% endif %}
+                        </small>
+                        
+                        <div>
+                            <a href="{% url 'attendance_list' %}?course={{ course.id }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-clipboard-check me-1"></i> Attendance
+                            </a>
+                            {% if user.user_type == 'lecturer' and user == course.lecturer %}
+                            <a href="{% url 'generate_qrcode' %}?course={{ course.id }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-qr-code me-1"></i> Generate QR
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                {% if user.user_type == 'student' %}
+                    <p class="mb-0">You are not enrolled in any courses yet. Please contact your administrator.</p>
+                {% elif user.user_type == 'lecturer' %}
+                    <p class="mb-0">You have not been assigned any courses yet. Please contact the administrator.</p>
+                {% else %}
+                    <p class="mb-0">No courses have been created yet. 
+                     
+                        <a href="{% url 'course_management' %}" class="alert-link">Create a new course</a>.
+
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+{% if user.user_type == 'admin' %}
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Course Management</h5>
+            </div>
+            <div class="card-body">
+                <p>As an administrator, you can manage all courses in the system.</p>
+                <a href="{% url 'course_management' %}" class="btn btn-primary">
+                    <i class="bi bi-gear-fill me-1"></i> Manage Courses
+                </a>
+                <a href="{% url 'course_management' %}" class="btn btn-success">
+                    <i class="bi bi-plus-circle me-1"></i> Add New Course
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

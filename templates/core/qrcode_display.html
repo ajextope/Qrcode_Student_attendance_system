@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}QR Code - QR Attendance System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <h2>QR Code Generated</h2>
+        <p class="lead">Share this QR code with your students to mark attendance</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">QR Code</h5>
+            </div>
+            <div class="card-body text-center">
+                <img src="data:image/png;base64,{{ qr_image }}" alt="QR Code" class="img-fluid mb-3" style="max-width: 300px;">
+                <p class="mb-1"><strong>Session:</strong> {{ qr_code.session }}</p>
+                <p class="mb-1"><strong>Course:</strong> {{ qr_code.session.course.code }} - {{ qr_code.session.course.title }}</p>
+                <p class="mb-1"><strong>Location:</strong> {{ qr_code.session.location }}</p>
+                <p class="mb-1"><strong>Expires at:</strong> <span id="expiration-time">{{ qr_code.expires_at }}</span></p>
+                <p class="mb-3"><strong>Attendance Count:</strong> <span id="attendance-count">0</span></p>
+                
+                <div class="d-grid gap-2">
+                    <a href="{% url 'generate_qrcode' %}" class="btn btn-outline-primary">Generate Another QR Code</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">QR Code Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h5 class="alert-heading">Instructions</h5>
+                    <p>Students can scan this QR code using the "Scan QR" feature in the app to mark their attendance.</p>
+                    <p>This QR code will expire in <span id="countdown">15:00</span> minutes.</p>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label"><strong>QR Code URL:</strong></label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" value="{{ qr_url }}" id="qr-url" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard()">Copy</button>
+                    </div>
+                    <div class="form-text">Share this URL with students who cannot scan the QR code.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Function to copy URL to clipboard
+    function copyToClipboard() {
+        var copyText = document.getElementById("qr-url");
+        copyText.select();
+        copyText.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(copyText.value);
+        alert("URL copied to clipboard");
+    }
+    
+    // Function to update countdown timer
+    function updateCountdown() {
+        var expirationTime = new Date("{{ qr_code.expires_at|date:'c' }}");
+        var now = new Date();
+        var diff = Math.max(0, Math.floor((expirationTime - now) / 1000));
+        
+        var minutes = Math.floor(diff / 60);
+        var seconds = diff % 60;
+        
+        document.getElementById("countdown").textContent = 
+            minutes.toString().padStart(2, '0') + ":" + 
+            seconds.toString().padStart(2, '0');
+        
+        if (diff <= 0) {
+            document.getElementById("countdown").textContent = "Expired";
+            clearInterval(countdownInterval);
+        }
+    }
+    
+    // Function to check QR code status
+    function checkQRCodeStatus() {
+        fetch("{% url 'check_qrcode_status' qr_code.id %}")
+            .then(response => response.json())
+            .then(data => {
+                if (data.is_expired) {
+                    document.getElementById("countdown").textContent = "Expired";
+                    clearInterval(countdownInterval);
+                }
+                document.getElementById("attendance-count").textContent = data.attendance_count;
+            })
+            .catch(error => console.error("Error checking QR code status:", error));
+    }
+    
+    // Update countdown every second
+    var countdownInterval = setInterval(updateCountdown, 1000);
+    
+    // Check QR code status every 5 seconds
+    var statusInterval = setInterval(checkQRCodeStatus, 5000);
+    
+    // Initial update
+    updateCountdown();
+    checkQRCodeStatus();
+</script>
+{% endblock %}

@@ -1,0 +1,628 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}Course Management - QR Attendance System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Course Management</li>
+            </ol>
+        </nav>
+        
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>Course Management</h2>
+            <div>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCourseModal">
+                    <i class="bi bi-journal-plus me-1"></i> Add New Course
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Filter Options</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" action="{% url 'course_management' %}">
+                    <div class="mb-3">
+                        <label for="lecturer" class="form-label">Lecturer</label>
+                        <select class="form-select" id="lecturer" name="lecturer">
+                            <option value="">All Lecturers</option>
+                            {% for lecturer in lecturers %}
+                                <option value="{{ lecturer.id }}" {% if selected_lecturer == lecturer.id %}selected{% endif %}>
+                                    {{ lecturer.get_full_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="search" name="search" placeholder="Code, Title..." value="{{ search_query }}">
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Apply Filters</button>
+                        <a href="{% url 'course_management' %}" class="btn btn-outline-secondary">Clear Filters</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Course Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Total Courses:</span>
+                        <strong>{{ total_courses }}</strong>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Active Courses:</span>
+                        <strong>{{ active_courses }}</strong>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Total Students Enrolled:</span>
+                        <strong>{{ total_enrollments }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Courses</h5>
+            </div>
+            <div class="card-body">
+                {% if courses %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Title</th>
+                                    <th>Lecturer</th>
+                                    <th>Students</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for course in courses %}
+                                <tr>
+                                    <td>{{ course.code }}</td>
+                                    <td>{{ course.title }}</td>
+                                    <td>{{ course.lecturer.get_full_name }}</td>
+                                    <td>{{ course.students.count }}</td>
+                                    <td>
+                                        {% if course.is_active %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-outline-primary edit-course-btn" 
+                                                    data-bs-toggle="modal" data-bs-target="#editCourseModal"
+                                                    data-course-id="{{ course.id }}"
+                                                    data-code="{{ course.code }}"
+                                                    data-title="{{ course.title }}"
+                                                    data-description="{{ course.description }}"
+                                                    data-lecturer-id="{{ course.lecturer.id }}"
+                                                    data-is-active="{{ course.is_active|yesno:'true,false' }}"
+                                                    title="Edit Course">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-primary manage-students-btn"
+                                                    data-bs-toggle="modal" data-bs-target="#manageStudentsModal"
+                                                    data-course-id="{{ course.id }}"
+                                                    data-course-title="{{ course.title }}"
+                                                    title="Manage Students">
+                                                <i class="bi bi-people"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger delete-course-btn"
+                                                    data-bs-toggle="modal" data-bs-target="#deleteCourseModal"
+                                                    data-course-id="{{ course.id }}"
+                                                    data-course-title="{{ course.title }}"
+                                                    title="Delete Course">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {% if is_paginated %}
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1{% if selected_lecturer %}&lecturer={{ selected_lecturer }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="First">
+                                        <span aria-hidden="true">&laquo;&laquo;</span>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if selected_lecturer %}&lecturer={{ selected_lecturer }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}{% if selected_lecturer %}&lecturer={{ selected_lecturer }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if selected_lecturer %}&lecturer={{ selected_lecturer }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if selected_lecturer %}&lecturer={{ selected_lecturer }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Last">
+                                        <span aria-hidden="true">&raquo;&raquo;</span>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    
+                {% else %}
+                    <p class="text-center text-muted">No courses found matching the selected criteria.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Course Modal -->
+<div class="modal fade" id="createCourseModal" tabindex="-1" aria-labelledby="createCourseModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createCourseModalLabel">Create New Course</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'course_management' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="code" class="form-label">Course Code</label>
+                        <input type="text" class="form-control" id="code" name="code" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Course Title</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="lecturer_id" class="form-label">Lecturer</label>
+                        <select class="form-select" id="lecturer_id" name="lecturer_id" required>
+                            <option value="">Select Lecturer</option>
+                            {% for lecturer in lecturers %}
+                                <option value="{{ lecturer.id }}">{{ lecturer.get_full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                        <label class="form-check-label" for="is_active">
+                            Active Course
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" name="action" value="create">Create Course</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Course Modal -->
+<div class="modal fade" id="editCourseModal" tabindex="-1" aria-labelledby="editCourseModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editCourseModalLabel">Edit Course</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'course_management' %}">
+                {% csrf_token %}
+                <input type="hidden" id="edit_course_id" name="course_id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_code" class="form-label">Course Code</label>
+                        <input type="text" class="form-control" id="edit_code" name="code" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_title" class="form-label">Course Title</label>
+                        <input type="text" class="form-control" id="edit_title" name="title" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_description" class="form-label">Description</label>
+                        <textarea class="form-control" id="edit_description" name="description" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_lecturer_id" class="form-label">Lecturer</label>
+                        <select class="form-select" id="edit_lecturer_id" name="lecturer_id" required>
+                            <option value="">Select Lecturer</option>
+                            {% for lecturer in lecturers %}
+                                <option value="{{ lecturer.id }}">{{ lecturer.get_full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="edit_is_active" name="is_active">
+                        <label class="form-check-label" for="edit_is_active">
+                            Active Course
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" name="action" value="update">Update Course</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Manage Students Modal -->
+<div class="modal fade" id="manageStudentsModal" tabindex="-1" aria-labelledby="manageStudentsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="manageStudentsModalLabel">Manage Students for <span id="course_title_display"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'course_management' %}">
+                {% csrf_token %}
+                <input type="hidden" id="manage_course_id" name="course_id" value="{{ course.id }}">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Available Students</h6>
+                            <div class="input-group mb-3">
+                                <input type="text" class="form-control" id="available_student_search" placeholder="Search students...">
+                                <button class="btn btn-outline-secondary" type="button" id="clear_available_search">Clear</button>
+                            </div>
+                            <div class="list-group available-students-list" style="max-height: 300px; overflow-y: auto;">
+                                {% for student in all_students %}
+                                <div class="list-group-item list-group-item-action student-item" data-student-id="{{ student.id }}" data-student-name="{{ student.get_full_name }}">
+                                    <div class="form-check">
+                                        <input class="form-check-input available-student-checkbox" type="checkbox" value="{{ student.id }}" id="student_{{ student.id }}">
+                                        <label class="form-check-label" for="student_{{ student.id }}">
+                                            {{ student.get_full_name }}
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="d-grid gap-2 mt-2">
+                                <button type="button" class="btn btn-primary btn-sm" id="add_selected_students">
+                                    <i class="bi bi-arrow-right"></i> Add Selected
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6>Enrolled Students</h6>
+                            <div class="input-group mb-3">
+                                <input type="text" class="form-control" id="enrolled_student_search" placeholder="Search enrolled...">
+                                <button class="btn btn-outline-secondary" type="button" id="clear_enrolled_search">Clear</button>
+                            </div>
+                            <div class="list-group enrolled-students-list" style="max-height: 300px; overflow-y: auto;" id="enrolled_students_container">
+                                <!-- Enrolled students will be dynamically loaded here -->
+                            </div>
+                            <div class="d-grid gap-2 mt-2">
+                                <button type="button" class="btn btn-danger btn-sm" id="remove_selected_students">
+                                    <i class="bi bi-arrow-left"></i> Remove Selected
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Hidden input to store selected students -->
+                    <input type="hidden" id="enrolled_students_ids" name="enrolled_students_ids[]" value="">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" name="action" value="update_students">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Course Modal -->
+<div class="modal fade" id="deleteCourseModal" tabindex="-1" aria-labelledby="deleteCourseModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteCourseModalLabel">Delete Course</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'course_management' %}">
+                {% csrf_token %}
+                <input type="hidden" id="delete_course_id" name="course_id">
+                <div class="modal-body">
+                    <p>Are you sure you want to delete the course <strong id="delete_course_title"></strong>?</p>
+                    <p class="text-danger">This action cannot be undone. All associated data including sessions, QR codes, and attendance records will be permanently deleted.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger" name="action" value="delete">Delete Course</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle edit course button clicks
+        const editButtons = document.querySelectorAll('.edit-course-btn');
+        editButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const courseId = this.getAttribute('data-course-id');
+                const code = this.getAttribute('data-code');
+                const title = this.getAttribute('data-title');
+                const description = this.getAttribute('data-description');
+                const lecturerId = this.getAttribute('data-lecturer-id');
+                const isActive = this.getAttribute('data-is-active') === 'true';
+                
+                document.getElementById('edit_course_id').value = courseId;
+                document.getElementById('edit_code').value = code;
+                document.getElementById('edit_title').value = title;
+                document.getElementById('edit_description').value = description;
+                document.getElementById('edit_lecturer_id').value = lecturerId;
+                document.getElementById('edit_is_active').checked = isActive;
+            });
+        });
+        
+        // Handle delete course button clicks
+        const deleteButtons = document.querySelectorAll('.delete-course-btn');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const courseId = this.getAttribute('data-course-id');
+                const courseTitle = this.getAttribute('data-course-title');
+                
+                document.getElementById('delete_course_id').value = courseId;
+                document.getElementById('delete_course_title').textContent = courseTitle;
+            });
+        });
+        
+        // Handle manage students button clicks
+      
+        // Handle manage students button clicks
+        const manageStudentsButtons = document.querySelectorAll('.manage-students-btn');
+manageStudentsButtons.forEach(button => {
+    button.addEventListener('click', function() {
+        const courseId = this.getAttribute('data-course-id');
+        const courseTitle = this.getAttribute('data-course-title');
+        
+        document.getElementById('manage_course_id').value = courseId;
+        document.getElementById('course_title_display').textContent = courseTitle;
+
+        // Fetch available students for this course
+        fetch(`/api/courses/${courseId}/available_students/`)
+            .then(response => response.json())
+            .then(data => {
+                const availableContainer = document.querySelector('.available-students-list');
+                availableContainer.innerHTML = ''; // Clear existing list
+                data.students.forEach(student => {
+                    const studentItem = document.createElement('div');
+                    studentItem.className = 'list-group-item list-group-item-action student-item';
+                    studentItem.setAttribute('data-student-id', student.id);
+                    studentItem.setAttribute('data-student-name', student.name);
+                    studentItem.innerHTML = `
+                        <div class="form-check">
+                            <input class="form-check-input available-student-checkbox" type="checkbox" value="${student.id}" id="student_${student.id}">
+                            <label class="form-check-label" for="student_${student.id}">
+                                ${student.name}
+                            </label>
+                        </div>
+                    `;
+                    availableContainer.appendChild(studentItem);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching available students:', error);
+            });
+
+        // Fetch enrolled students for this course
+        fetch(`/api/courses/${courseId}/enrolled_students/`)
+            .then(response => response.json())
+            .then(data => {
+                const enrolledContainer = document.getElementById('enrolled_students_container');
+                enrolledContainer.innerHTML = ''; // Clear existing list
+                
+                if (data.students.length === 0) {
+                    enrolledContainer.innerHTML = '<div class="text-center text-muted py-3">No students enrolled</div>';
+                } else {
+                    data.students.forEach(student => {
+                        const studentItem = document.createElement('div');
+                        studentItem.className = 'list-group-item list-group-item-action enrolled-student-item';
+                        studentItem.setAttribute('data-student-id', student.id);
+                        studentItem.setAttribute('data-student-name', student.name);
+                        
+                        studentItem.innerHTML = `
+                            <div class="form-check">
+                                <input class="form-check-input enrolled-student-checkbox" type="checkbox" value="${student.id}" id="enrolled_student_${student.id}">
+                                <label class="form-check-label" for="enrolled_student_${student.id}">
+                                    ${student.name}
+                                </label>
+                            </div>
+                        `;
+                        
+                        enrolledContainer.appendChild(studentItem);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching enrolled students:', error);
+            });
+    });
+});
+
+        // Handle student search
+        document.getElementById('available_student_search').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const studentItems = document.querySelectorAll('.available-students-list .student-item');
+            
+            studentItems.forEach(item => {
+                const studentName = item.getAttribute('data-student-name').toLowerCase();
+                if (studentName.includes(searchTerm)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+        
+        document.getElementById('enrolled_student_search').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const studentItems = document.querySelectorAll('.enrolled-students-list .enrolled-student-item');
+            
+            studentItems.forEach(item => {
+                const studentName = item.getAttribute('data-student-name').toLowerCase();
+                if (studentName.includes(searchTerm)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+        
+        // Clear search
+        document.getElementById('clear_available_search').addEventListener('click', function() {
+            document.getElementById('available_student_search').value = '';
+            document.querySelectorAll('.available-students-list .student-item').forEach(item => {
+                item.style.display = '';
+            });
+        });
+        
+        document.getElementById('clear_enrolled_search').addEventListener('click', function() {
+            document.getElementById('enrolled_student_search').value = '';
+            document.querySelectorAll('.enrolled-students-list .enrolled-student-item').forEach(item => {
+                item.style.display = '';
+            });
+        });
+        
+        // Add selected students
+        document.getElementById('add_selected_students').addEventListener('click', function() {
+            const selectedCheckboxes = document.querySelectorAll('.available-student-checkbox:checked');
+            const enrolledContainer = document.getElementById('enrolled_students_container');
+            let currentEnrolled = document.getElementById('enrolled_students_ids').value;
+            let enrolledIds = currentEnrolled ? currentEnrolled.split(',') : [];
+            
+            // If no students are currently enrolled, clear the "No students enrolled" message
+            if (enrolledIds.length === 0) {
+                enrolledContainer.innerHTML = '';
+            }
+            
+            selectedCheckboxes.forEach(checkbox => {
+                const studentId = checkbox.value;
+                const studentItem = checkbox.closest('.student-item');
+                const studentName = studentItem.getAttribute('data-student-name');
+                
+                // Only add if not already enrolled
+                if (!enrolledIds.includes(studentId)) {
+                    enrolledIds.push(studentId);
+                    
+                    const enrolledItem = document.createElement('div');
+                    enrolledItem.className = 'list-group-item list-group-item-action enrolled-student-item';
+                    enrolledItem.setAttribute('data-student-id', studentId);
+                    enrolledItem.setAttribute('data-student-name', studentName);
+                    
+                    enrolledItem.innerHTML = `
+                        <div class="form-check">
+                            <input class="form-check-input enrolled-student-checkbox" type="checkbox" value="${studentId}" id="enrolled_student_${studentId}">
+                            <label class="form-check-label" for="enrolled_student_${studentId}">
+                                ${studentName}
+                            </label>
+                        </div>
+                    `;
+                    
+                    enrolledContainer.appendChild(enrolledItem);
+                }
+                
+                // Uncheck the checkbox
+                checkbox.checked = false;
+            });
+            
+            // Update hidden input
+            document.getElementById('enrolled_students_ids').value = enrolledIds.join(',');
+        });
+        
+        // Remove selected students
+        document.getElementById('remove_selected_students').addEventListener('click', function() {
+            const selectedCheckboxes = document.querySelectorAll('.enrolled-student-checkbox:checked');
+            let currentEnrolled = document.getElementById('enrolled_students_ids').value;
+            let enrolledIds = currentEnrolled ? currentEnrolled.split(',') : [];
+            
+            selectedCheckboxes.forEach(checkbox => {
+                const studentId = checkbox.value;
+                const studentItem = checkbox.closest('.enrolled-student-item');
+                
+                // Remove from array
+                enrolledIds = enrolledIds.filter(id => id !== studentId);
+                
+                // Remove from DOM
+                studentItem.remove();
+            });
+            
+            // Update hidden input
+            document.getElementById('enrolled_students_ids').value = enrolledIds.join(',');
+            
+            // If no students are enrolled, show message
+            const enrolledContainer = document.getElementById('enrolled_students_container');
+            if (enrolledIds.length === 0) {
+                enrolledContainer.innerHTML = '<div class="text-center text-muted py-3">No students enrolled</div>';
+            }
+        });
+    });
+</script>
+{% endblock %}
