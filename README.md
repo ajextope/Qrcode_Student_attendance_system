@@ -13,6 +13,9 @@ A Django-based attendance management system using QR codes and geolocation verif
 ## Installation
 
 1. Clone the repository
+   ```
+   git pull https://github.com/ajextope/Qrcode_Student_attendance_system.git
+   ```
 2. Create a virtual environment:
    ```
    python -m venv venv
